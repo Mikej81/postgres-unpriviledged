@@ -6,6 +6,10 @@
 
 FROM debian:bullseye-slim
 
+#MC Add
+ENV POSTGRES_PASSWORD='Pass@word123'
+ENV POSTGRES_USER=postgres
+
 # explicitly set user/group IDs
 RUN set -eux; \
 	groupadd -r postgres --gid=999; \
@@ -182,14 +186,26 @@ RUN set -eux; \
 
 RUN install --verbose --directory --owner postgres --group postgres --mode 3777 /var/run/postgresql
 
-ENV PGDATA /var/lib/postgresql/data
+#ENV PGDATA /var/lib/postgresql/data
+ENV PGDATA /tmp/postgresql/data
+RUN mkdir -p $PGDATA
 # this 1777 will be replaced by 0700 at runtime (allows semi-arbitrary "--user" values)
-RUN install --verbose --directory --owner postgres --group postgres --mode 1777 "$PGDATA"
+RUN install --verbose --directory --owner postgres --group postgres --mode 0700 "$PGDATA"
 VOLUME /var/lib/postgresql/data
 
 COPY docker-entrypoint.sh docker-ensure-initdb.sh /usr/local/bin/
 RUN ln -sT docker-ensure-initdb.sh /usr/local/bin/docker-enforce-initdb.sh
+
+#MC add
+RUN sed -i -r 's/#huge_pages.*?/huge_pages = off/g' /usr/local/share/postgresql/postgresql.conf.sample;
+RUN chown -R postgres:postgres $PGDATA
+#MC end
+
 ENTRYPOINT ["docker-entrypoint.sh"]
+
+#MC Add
+USER postgres
+#MC End
 
 # We set the default STOPSIGNAL to SIGINT, which corresponds to what PostgreSQL
 # calls "Fast Shutdown mode" wherein new connections are disallowed and any

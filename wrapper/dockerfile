@@ -1,0 +1,14 @@
+# Thanks for tips from https://suedbroecker.net/2020/06/23/run-a-postgressql-container-as-a-non-root-user-in-openshift/
+
+FROM postgres:13
+
+ENV PGDATA=/tmp/postresql/data
+
+RUN mkdir -p $PGDATA
+
+RUN chown -R postgres:postgres $PGDATA
+RUN chmod 777 $PGDATA
+
+RUN sed -i -r 's/#huge_pages.*?/huge_pages = off/g' /usr/share/postgresql/postgresql.conf.sample
+
+USER postgres
